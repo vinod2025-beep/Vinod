@@ -9,7 +9,7 @@ on:
       - main
 
 env:
-  TF_ROOT: Vinod   # Terraform root folder (inside repo)
+  TF_ROOT: .   # Terraform root folder (inside repo)
 
 jobs:
   terraform-validate-plan:
