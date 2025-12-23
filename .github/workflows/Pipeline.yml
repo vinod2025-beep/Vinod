@@ -8,13 +8,22 @@ on:
     branches:
       - main
 
+env:
+  TF_ROOT: Vinod
+
 jobs:
-  terraform-validate:
+  terraform-validate-plan:
     name: Terraform Validate & Plan
     runs-on: ubuntu-latest
 
+    env:   # 👈 ONE TIME DEFINITION
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Terraform
@@ -23,38 +32,37 @@ jobs:
           terraform_version: 1.6.6
 
       - name: Terraform Init
-        env:
-          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        working-directory: ${{ env.TF_ROOT }}
         run: terraform init
 
       - name: Terraform Validate
+        working-directory: ${{ env.TF_ROOT }}
         run: terraform validate
 
       - name: Terraform Plan
-        env:
-          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        working-directory: ${{ env.TF_ROOT }}
         run: terraform plan -out=tfplan
 
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
         with:
           name: terraform-plan
-          path: tfplan
+          path: Vinod/tfplan
 
   terraform-apply:
     name: Terraform Apply (Approval Required)
-    needs: terraform-validate
+    needs: terraform-validate-plan
     runs-on: ubuntu-latest
-    environment: prod   # 👈 Approval happens here
+    environment: prod
+
+    env:   # 👈 ONE TIME DEFINITION (apply job)
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Terraform
@@ -66,19 +74,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: terraform-plan
+          path: Vinod
 
       - name: Terraform Init
-        env:
-          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        working-directory: ${{ env.TF_ROOT }}
         run: terraform init
 
       - name: Terraform Apply
-        env:
-          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        working-directory: ${{ env.TF_ROOT }}
         run: terraform apply -auto-approve tfplan
