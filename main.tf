@@ -1,5 +1,5 @@
 module "base_rg" {
-  source = "./rg"
+  source = "./modules/rg"
 
   region      = var.region
   environment = var.environment
@@ -9,7 +9,7 @@ module "base_rg" {
 }
 
 module "backup_rg" {
-  source = "./rg"
+  source = "./modules/rg"
 
   region      = var.region
   environment = var.environment
@@ -20,7 +20,7 @@ module "backup_rg" {
 
 
 module "storage_backup" {
-  source = "./storage"
+  source = "./modules/storage"
 
   region              = var.region
   environment         = var.environment
@@ -32,7 +32,7 @@ module "storage_backup" {
 }
 
 module "storage_bck" {
-  source = "./storage"
+  source = "./modules/storage"
 
   region              = var.region
   environment         = var.environment
@@ -51,7 +51,7 @@ module "storage_bck" {
 
 
 module "log_workspace" {
-  source = "./loggging"
+  source = "./modules/loggging"
 
   region              = var.region
   environment         = var.environment
@@ -60,4 +60,5 @@ module "log_workspace" {
   location            = var.location
   resource_group_name = module.base_rg.name
 }
+
 
