@@ -1,79 +1,59 @@
-name: Terraform CI/CD with Modules
+name: Terraform Azure CI/CD
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 env:
-  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-  ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  # 🔴 CHANGE THIS PATH TO YOUR TERRAFORM ROOT DIRECTORY
+  TF_WORKING_DIR: vinod2025-beep/Vinod
 
 jobs:
-  build-validate-plan:
-    name: Build, Validate & Plan
+  terraform:
+    name: Terraform Validate, Plan and Apply
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: Vinod
 
     steps:
-      - name: Checkout Code
+      # Step 1: Checkout GitHub repository
+      - name: Checkout source code
         uses: actions/checkout@v4
 
+      # Step 2: Install Terraform CLI
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.6.6
+          terraform_version: latest
 
+      # Step 3: Convert AZURE_CREDENTIALS secret into ARM_* variables
+      - name: Export Azure credentials
+        run: |
+          echo '${{ secrets.AZURE_CREDENTIALS }}' > azure_creds.json
+
+          echo "ARM_CLIENT_ID=$(jq -r .clientId azure_creds.json)" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=$(jq -r .clientSecret azure_creds.json)" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=$(jq -r .tenantId azure_creds.json)" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=$(jq -r .subscriptionId azure_creds.json)" >> $GITHUB_ENV
+
+      # Step 4: Initialize Terraform
       - name: Terraform Init
-        run: terraform init -input=false
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init
 
-      - name: Terraform Format
-        run: terraform fmt -check -recursive
-
+      # Step 5: Validate Terraform code
       - name: Terraform Validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform validate
 
+      # Step 6: Terraform Plan
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform plan
 
-      - name: Upload Terraform Plan
-        uses: actions/upload-artifact@v4
-        with:
-          name: tfplan
-          path: Vinod/tfplan
-
-  apply:
-    name: Terraform Apply (Manual Approval)
-    runs-on: ubuntu-latest
-    needs: build-validate-plan
-    environment:
-      name: terraform-approval
-    defaults:
-      run:
-        working-directory: Vinod
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.6.6
-
-      - name: Terraform Init
-        run: terraform init -input=false
-
-      - name: Download Terraform Plan
-        uses: actions/download-artifact@v4
-        with:
-          name: tfplan
-          path: Vinod
-
+      # Step 7: Terraform Apply (auto-approved)
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform apply -auto-approve
