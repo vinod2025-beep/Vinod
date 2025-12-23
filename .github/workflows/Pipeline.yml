@@ -9,14 +9,14 @@ on:
       - main
 
 env:
-  TF_ROOT: Vinod
+  TF_ROOT: Vinod   # Terraform root folder (inside repo)
 
 jobs:
   terraform-validate-plan:
     name: Terraform Validate & Plan
     runs-on: ubuntu-latest
 
-    env:   # 👈 ONE TIME DEFINITION
+    env:   # Azure credentials passed ONCE
       ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
@@ -50,12 +50,12 @@ jobs:
           path: Vinod/tfplan
 
   terraform-apply:
-    name: Terraform Apply (Approval Required)
+    name: Terraform Apply (Manual Approval)
     needs: terraform-validate-plan
     runs-on: ubuntu-latest
-    environment: prod
+    environment: prod   # 👈 Approval enforced here
 
-    env:   # 👈 ONE TIME DEFINITION (apply job)
+    env:   # Azure credentials passed ONCE
       ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
