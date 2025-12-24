@@ -1,0 +1,66 @@
+name: Terraform-Azure-CI-CD
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: Terraform Azure
+    runs-on: ubuntu-latest
+    environment: production
+
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # CHANGE THIS if your Terraform code is in a subfolder
+      TF_WORKING_DIR: ./Vinod
+
+    steps:
+    # Step 1: Checkout repository
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # Step 2: Setup Terraform
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: latest
+
+    # Step 3: Terraform Init
+    - name: Terraform Init
+      working-directory: ${{ env.TF_WORKING_DIR }}
+      run: terraform init
+
+    # Step 4: Terraform Format Check
+    - name: Terraform Format
+      working-directory: ${{ env.TF_WORKING_DIR }}
+      run: terraform fmt -check -recursive
+
+    # Step 5: Terraform Validate
+    - name: Terraform Validate
+      working-directory: ${{ env.TF_WORKING_DIR }}
+      run: terraform validate
+
+    # Step 6: Terraform Plan (PR + Push)
+    - name: Terraform Plan
+      working-directory: ${{ env.TF_WORKING_DIR }}
+      run: terraform plan -input=false
+
+    # Step 7: Terraform Apply (ONLY on push to main)
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      working-directory: ${{ env.TF_WORKING_DIR }}
+      run: terraform apply -auto-approve -input=false
