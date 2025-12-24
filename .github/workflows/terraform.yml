@@ -1,4 +1,4 @@
-name: Terraform-Azure-CI-CD
+name: Terraform-Azure
 
 on:
   pull_request:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   terraform:
-    name: Terraform Azure
+    name: Terraform Azure Deploy
     runs-on: ubuntu-latest
     environment: production
 
@@ -19,21 +19,22 @@ jobs:
       run:
         shell: bash
 
+    # ✅ EXACT secret names from your screenshot
     env:
-      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
-      # CHANGE THIS if your Terraform code is in a subfolder
-      TF_WORKING_DIR: ./Vinod
+      # ✅ Change ONLY if Terraform code is in a subfolder
+      TF_WORKING_DIR: ./
 
     steps:
-    # Step 1: Checkout repository
-    - name: Checkout Code
+    # Step 1: Checkout repo
+    - name: Checkout repository
       uses: actions/checkout@v4
 
-    # Step 2: Setup Terraform
+    # Step 2: Install Terraform
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:
@@ -44,8 +45,8 @@ jobs:
       working-directory: ${{ env.TF_WORKING_DIR }}
       run: terraform init
 
-    # Step 4: Terraform Format Check
-    - name: Terraform Format
+    # Step 4: Terraform Format
+    - name: Terraform Format Check
       working-directory: ${{ env.TF_WORKING_DIR }}
       run: terraform fmt -check -recursive
 
@@ -54,12 +55,12 @@ jobs:
       working-directory: ${{ env.TF_WORKING_DIR }}
       run: terraform validate
 
-    # Step 6: Terraform Plan (PR + Push)
+    # Step 6: Terraform Plan
     - name: Terraform Plan
       working-directory: ${{ env.TF_WORKING_DIR }}
       run: terraform plan -input=false
 
-    # Step 7: Terraform Apply (ONLY on push to main)
+    # Step 7: Terraform Apply (only on push to main)
     - name: Terraform Apply
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       working-directory: ${{ env.TF_WORKING_DIR }}
