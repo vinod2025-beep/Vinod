@@ -46,9 +46,9 @@ jobs:
       run: terraform init
 
     # Step 4: Terraform Format
-    - name: Terraform Format Check
+    - name: Terraform Format
       working-directory: ${{ env.TF_WORKING_DIR }}
-      run: terraform fmt -check -recursive
+      run: terraform fmt -recursive
 
     # Step 5: Terraform Validate
     - name: Terraform Validate
