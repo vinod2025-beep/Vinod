@@ -51,7 +51,7 @@ module "storage_bck" {
 
 
 module "log_workspace" {
-  source = "./modules/loggging"
+  source = "./modules/logging"
 
   region              = var.region
   environment         = var.environment
@@ -60,5 +60,6 @@ module "log_workspace" {
   location            = var.location
   resource_group_name = module.base_rg.name
 }
+
 
 
